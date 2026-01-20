@@ -7,7 +7,7 @@ module read
 
 	Base.@kwdef mutable struct METEO
 		# Humidity [0-1]
-      Humidity            :: Union{Missing,Vector}
+      RelativeHumidity            :: Union{Missing,Vector}
 		# Solar radiation max [ W/m³]
       SolarRadiation_Max  :: Union{Missing,Vector}
 		# Solar radiation mean [ W/m³]
@@ -15,11 +15,11 @@ module read
 		# Solar radiation min [ W/m³]
       SolarRadiation_Min  :: Union{Missing,Vector}
 		# Maximum temperature [⁰C]
-      Temp_Max            :: Union{Missing,Vector}
+      T_Max            :: Union{Missing,Vector}
 		# Minimum temperature [⁰C]
-      Temp_Min            :: Union{Missing,Vector}
-		# Velocity [M S⁻¹]
-      V                   :: Union{Missing,Vector}
+      T_Min            :: Union{Missing,Vector}
+		# Velocity of wind speed [M S⁻¹]
+      Wind                   :: Union{Missing,Vector}
 	end
 
 	function READ_WEATHER(Path_Input)
@@ -28,8 +28,6 @@ module read
 
 		Data₀ = CSV.read(Path_Input, DataFrame; header=true)
 
-		@show Data₀
-
       Year                = convert(Vector{Int64}, Tables.getcolumn(Data₀, :Year))
       Month               = convert(Vector{Int64}, Tables.getcolumn(Data₀, :Month))
       Day                 = convert(Vector{Int64}, Tables.getcolumn(Data₀, :Day))
@@ -37,17 +35,17 @@ module read
 
 		DateTime = Dates.DateTime.(Year, Month, Day, Hour) #  <"standard"> "proleptic_gregorian" calendar
 
-      Humidity            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("Humidity[%]")))
+      RelativeHumidity            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("RelativeHumidity[%]")))
       SolarRadiation_Max  = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("SolarRadiation_Max[W/M3]")))
       SolarRadiation_Mean = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("SolarRadiation_Mean[W/M3]")))
       SolarRadiation_Min  = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("SolarRadiation_Min[W/M3]")))
-      Temp_Max            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("AirTemperature_Max[⁰C]")))
-      Temp_Min            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("AirTemperature_Min[⁰C]")))
-      V                   = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("WindSpeed[M/S]")))
+      T_Max            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("AirTemperature_Max[⁰C]")))
+      T_Min            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("AirTemperature_Min[⁰C]")))
+      Wind                   = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("WindSpeed[M/S]")))
 
 		Nmeteo = length(Year)
 
-		meteo = METEO(Humidity,  SolarRadiation_Max, SolarRadiation_Mean, SolarRadiation_Min, Temp_Max, Temp_Min, V)
+		meteo = METEO(RelativeHumidity,  SolarRadiation_Max, SolarRadiation_Mean, SolarRadiation_Min, T_Max, T_Min, Wind)
 
 		# Testing for missing data
 		FieldName = propertynames(meteo)
@@ -60,7 +58,6 @@ module read
 				end
 			end
 		end
-
 
 	return DateTime, meteo, Nmeteo
 	end

@@ -43,9 +43,14 @@ module write
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	#		FUNCTION : TABLE_PET
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		function TABLE_PET(meteo, Nmeteo, Path_Output)
+		function TABLE_PET(DateTime, meteo, Nmeteo, Path_Output)
 			Matrix₁, FieldName_String = write.STRUCT_2_FIELDNAME(Nmeteo, meteo)
-			CSV.write(Path_Output, Tables.table(Matrix₁), writeheader=true, header=FieldName_String, bom=true)
+
+			pushfirst!(FieldName_String, string("Date")) # Write the "Id" at the very begenning
+
+			println(FieldName_String)
+
+			CSV.write(Path_Output, Tables.table([DateTime Matrix₁]), writeheader=true, header=FieldName_String, bom=true)
 		return nothing
 		end  # function: TABLE_PET
 	# ------------------------------------------------------------------
