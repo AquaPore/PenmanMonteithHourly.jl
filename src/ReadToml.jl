@@ -11,15 +11,16 @@ module readtoml
 	end # struct DATA
 
 	@option mutable struct PARAM
-		Hcrop            :: Float64
-		Latitude_ᴼ       :: Float64
-		Latitude_Minute  :: Float64
-		Longitude_ᴼ      :: Float64
-		Longitude_Minute :: Float64
-		R_Stomatal       :: Float64
-		Z_Altitude       :: Float64
-		Z_Humidity       :: Float64
-		Z_Wind           :: Float64
+      Hcrop            :: Float64
+      Latitude_ᴼ       :: Float64
+      Latitude_Minute  :: Float64
+      Longitude_ᴼ      :: Float64
+      Longitude_Minute :: Float64
+      R_Stomatal       :: Float64
+      Z_Altitude       :: Float64
+      Z_Humidity       :: Float64
+      Z_Wind           :: Float64
+      α                :: Float64
 	end # STRUCT PARAM
 
 	@option struct CST
@@ -27,9 +28,9 @@ module readtoml
       Gsc      :: Float64
 		Karmen   :: Float64
       T_Kelvin :: Float64
-      α        :: Float64
       λ        :: Float64
       σ        :: Float64
+		σₕₒᵤᵣ     :: Float64
       ϵ        :: Float64
 		ℜ       :: Float64
 	end # struct CST

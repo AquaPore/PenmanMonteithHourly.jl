@@ -35,13 +35,13 @@ module read
 
 		DateTime = Dates.DateTime.(Year, Month, Day, Hour) #  <"standard"> "proleptic_gregorian" calendar
 
-      RelativeHumidity            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("RelativeHumidity[%]")))
+      RelativeHumidity    = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("Humidity[%]")))
       SolarRadiation_Max  = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("SolarRadiation_Max[W/M3]")))
       SolarRadiation_Mean = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("SolarRadiation_Mean[W/M3]")))
       SolarRadiation_Min  = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("SolarRadiation_Min[W/M3]")))
-      T_Max            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("AirTemperature_Max[⁰C]")))
-      T_Min            = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("AirTemperature_Min[⁰C]")))
-      Wind                   = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("WindSpeed[M/S]")))
+      T_Max               = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("AirTemperature_Max[⁰C]")))
+      T_Min               = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("AirTemperature_Min[⁰C]")))
+      Wind                = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("WindSpeed[M/S]")))
 
 		Nmeteo = length(Year)
 
