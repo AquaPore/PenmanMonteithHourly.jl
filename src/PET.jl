@@ -18,30 +18,31 @@ module pet
 			printstyled(" ==== Running PET ======= \n", color=:blue)
 
 			# Read TOML input file
-				Path_Toml₀ =  raw"DATA\PARAMETER\PetOption.toml"
-				Path_Toml = joinpath(pwd(), Path_Toml₀)
-				option = readtoml.READTOML(Path_Toml)
+            Path_Toml₀ = raw"DATA\PARAMETER\PetOption.toml"
+            Path_Toml  = joinpath(pwd(), Path_Toml₀)
+            option     = readtoml.READTOML(Path_Toml)
 
-				Path_Input = joinpath(pwd(), option.path.Path_Input)
+			# Read .csv
+				DayHour, meteo, Nmeteo, Pet_Obs, ΔT = read.READ_WEATHER(; option.date, option.path)
 
-				DayHour, meteo, Nmeteo, Pet_Obs, ΔT = read.READ_WEATHER(Path_Input)
+				Pet_Sim = zeros(Float64, Nmeteo)
 
-				Pet = zeros(Float64, Nmeteo)
-
+			# Input which remain constant
 				Latitude, Longitude = pet.PENMAN_MONTEITH_CONSTANT(; option.param.Latitude_Minute, option.param.Latitude_ᴼ, option.param.Longitude_Minute, option.param.Longitude_ᴼ)
 
-				for  (iT, iiDateTime) in enumerate(DayHour)
-					Pet[iT] = pet.PENMAN_MONTEITH(;DayHour, cst=option.cst, iT, Latitude, Longitude, meteo, param=option.param,  ΔT₁=ΔT[iT])
-				end
+			# Computing for evey time step
+				Threads.@threads for iT =1:Nmeteo
 
-				# Writting csv
-					Path_Output = joinpath(pwd(), option.path.Path_Output)
-					write.TABLE_PET(;DayHour, meteo, Nmeteo, Path_Output, Pet, Pet_Obs)
+					Pet_Sim[iT] = pet.PENMAN_MONTEITH(;DayHour, cst=option.cst, iT, Latitude, Longitude, meteo, param=option.param,  ΔT₁=ΔT[iT], option.flag)
+				end # for iT =1:Nmeteo
 
-				# Plotting
-					plot.PLOT_PET(;DayHour, Pet, Pet_Obs)
+			# Writting output csv
 
-				# @show meteo
+					write.TABLE_PET(;DayHour, meteo, Nmeteo, option.path, Pet_Sim, Pet_Obs)
+
+			# Plotting output
+				plot.PLOT_PET(;DayHour, Pet_Sim, Pet_Obs, Nmeteo, option.path)
+
 		end  # function: PET
 	# ------------------------------------------------------------------
 
@@ -63,21 +64,36 @@ module pet
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	#		FUNCTION : PENMAN_MONTEITH
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		function PENMAN_MONTEITH(;cst, DayHour, iT, Latitude, Longitude, meteo, param, ΔT₁)
-			RelativeHumidity = meteo.RelativeHumidity[iT]
-			Radₛ             = meteo.SolarRadiation[iT]
-			Temp             = meteo.Temp[iT]
-			TempSoil         = meteo.TempSoil[iT]
-			Wind             = meteo.Wind[iT]
-			DateTime         = DayHour[iT]
+		function PENMAN_MONTEITH(;cst, DayHour, iT, Latitude, Longitude, meteo, param, ΔT₁, flag)
+
+			# Reading data
+				RelativeHumidity = meteo.RelativeHumidity[iT]
+				Radₛᵣ             = meteo.SolarRadiation[iT]
+				Temp             = meteo.Temp[iT]
+				TempSoil         = meteo.TempSoil[iT]
+				Wind             = meteo.Wind[iT]
+				DateTime         = DayHour[iT]
 
 			λᵥ = evapoFunc.physics.λ_LATENT_HEAT_VAPORIZATION(;Temp)
 
 			Pressure = evapoFunc.physics.ATMOSPHERIC_PRESSURE(;cst.T_Kelvin, Temp, param.Z_Altitude)
 
-			Rₐ_Inv = evapoFunc.aerodynamic.Rₐ_INV_AERODYNAMIC_RESISTANCE(;param.Hcrop, cst.Karmen, Wind, param.Z_Humidity, param.Z_Wind)
+			Radₐ, 🎏_Daylight = evapoFunc.radiation.Rₐ_EXTRATERRESTRIAL_RADIATION_HOURLY(;DateTime, cst.Gsc, Latitude, Longitude, param.Z_Altitude, ΔT₁, flag.🎏_ω_Tradition)
 
-			Rₛ = evapoFunc.aerodynamic.Rₛ_SURFACE_RESISTANCE(;param.R_Stomatal, param.Hcrop)
+
+			# 🎏_Ra_Param = true
+			if flag.🎏_Ra_Param
+				Rₐ_Inv =  Wind / param.Ra_Param
+			else
+
+				Rₐ_Inv = evapoFunc.aerodynamic.Rₐ_INV_AERODYNAMIC_RESISTANCE(;param.Hcrop, cst.Karmen, Wind, param.Z_Humidity, param.Z_Wind)
+			end
+
+			if flag.🎏_Rs_Param
+				Rₛ = param.Rₛ
+			else
+				Rₛ = evapoFunc.aerodynamic.Rₛ_SURFACE_RESISTANCE(;param.R_Stomatal, param.Hcrop)
+			end
 
 			γ = evapoFunc.physics.γ_PSYCHROMETRIC(;cst.Cₚ, Pressure, cst.ϵ, λᵥ)
 
@@ -89,20 +105,19 @@ module pet
 
 			ρₐᵢᵣ = evapoFunc.physics.ρₐᵢᵣ_AIR_DENSITY(;Pressure, Temp, cst.T_Kelvin, cst.ℜ, Eₐ)
 
-			Radₐ, 🎏_Daylight = evapoFunc.radiation.Rₐ_EXTRATERRESTRIAL_RADIATION_HOURLY(;DateTime, cst.Gsc, Latitude, Longitude, param.Z_Altitude, ΔT₁)
-
 			Radₛₒ = evapoFunc.radiation.Radₛₒ_CLEAR_SKY_RADIATION(;Radₐ, param.Z_Altitude)
 
-			Radₙₗ = evapoFunc.radiation.Radₙₗ_LONGWAVE_RADIATION(;cst.σ, Temp, Eₐ, Radₛ, cst.T_Kelvin,  Radₛₒ)
+			Radₙₗ = evapoFunc.radiation.Radₙₗ_LONGWAVE_RADIATION(;cst.σ, Temp, Eₐ, Radₛᵣ, cst.T_Kelvin,  Radₛₒ)
 
-			Radₙₛ = evapoFunc.radiation.Radₙₛ_NET_SHORTWAVE_RADIATION_REFLECTED(;param.α, Radₛ)
+			Radₙₛ = evapoFunc.radiation.Radₙₛ_NET_SHORTWAVE_RADIATION_REFLECTED(;param.α, Radₛᵣ)
 
 			ΔRadₙ = evapoFunc.radiation.ΔRadₙ_NET_RADIATION(;Radₙₗ, Radₙₛ)
 
-			G = evapoFunc.ground.G_SOIL_HEAT_FLUX_HOURLY(;DateTime, Latitude, Longitude, ΔRadₙ, param.Z_Altitude, 🎏_Daylight)
+			G = evapoFunc.ground.G_SOIL_HEAT_FLUX_HOURLY(;DateTime, Latitude, Longitude, ΔRadₙ, param.Z_Altitude, 🎏_Daylight,SoilHeatFlux_Sunlight=param.SoilHeatFlux_Sunlight, SoilHeatFlux_Night=param.SoilHeatFlux_Night )
 
-			Pet = evapoFunc.penmanmonteith.PET_PENMAN_MONTEITH_HOURLY(;cst.Cₚ, param.Kc, Eₐ, Eₛ, G, Rₐ_Inv, ΔRadₙ, Rₛ, γ, Δ, λᵥ, ρₐᵢᵣ, ΔT₁)
-		return Pet
+			Pet_Sim = evapoFunc.penmanmonteith.PET_PENMAN_MONTEITH_HOURLY(;cst.Cₚ, param.Kc, Eₐ, Eₛ, G, Rₐ_Inv, ΔRadₙ, Rₛ, γ, Δ, λᵥ, ρₐᵢᵣ, ΔT₁, cst.ρwater)
+
+		return Pet_Sim
 		end  # function: PENMAN_MONTEITH
 	#------------------------------------------------------------------
 end

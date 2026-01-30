@@ -43,7 +43,10 @@ module write
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	#		FUNCTION : TABLE_PET
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		function TABLE_PET(;DayHour, meteo, Nmeteo, Path_Output, Pet, Pet_Obs)
+		function TABLE_PET(;DayHour, meteo, Nmeteo, Pet_Sim, Pet_Obs, path)
+
+			Path_Output = joinpath(pwd(), path.Path_Output_Csv)
+
 			Matrix₁, FieldName_String = write.STRUCT_2_FIELDNAME(Nmeteo, meteo)
 
 			pushfirst!(FieldName_String, string("Date")) # Write the "Id" at the very begenning
@@ -52,7 +55,7 @@ module write
 
 			println(FieldName_String)
 
-			CSV.write(Path_Output, Tables.table([DayHour Matrix₁ Pet Pet_Obs]), writeheader=true, header=FieldName_String, bom=true)
+			CSV.write(Path_Output, Tables.table([DayHour Matrix₁ Pet_Sim Pet_Obs]), writeheader=true, header=FieldName_String, bom=true)
 		return nothing
 		end  # function: TABLE_PET
 	# ------------------------------------------------------------------

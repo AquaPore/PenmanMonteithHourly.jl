@@ -10,11 +10,12 @@ module evapoFunc
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		#		FUNCTION : PENMAN_MONTEITH_HOURLY
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			function PET_PENMAN_MONTEITH_HOURLY(;Kc, Cₚ, Eₐ, Eₛ, G, Rₐ_Inv, ΔRadₙ, Rₛ, γ, Δ, λᵥ, ρₐᵢᵣ, ΔT₁)
+			function PET_PENMAN_MONTEITH_HOURLY(;Kc, Cₚ, Eₐ, Eₛ, G, Rₐ_Inv, ΔRadₙ, Rₛ, γ, Δ, λᵥ, ρₐᵢᵣ, ΔT₁, ρwater)
 
-				ETₒ =  Kc * inv(λᵥ) *  (Δ * (ΔRadₙ - G) + ρₐᵢᵣ * Cₚ * max(Eₛ - Eₐ, 0.0) * Rₐ_Inv) / (Δ + γ * (1.0 + Rₛ * Rₐ_Inv))
+				ETₒ =  Kc *  (Δ * (ΔRadₙ - G) + ρₐᵢᵣ * Cₚ * (Eₛ - Eₐ) * Rₐ_Inv ) / ((Δ + γ * (1.0 + Rₛ * Rₐ_Inv)) * λᵥ * ρwater)
 
-				ETₒ = max(ETₒ, 0.0) * ΔT₁
+				# convert from [m J m-2 second⁻¹] ➡ [mm J m-2 ΔT⁻¹]
+				ETₒ = max(ETₒ, 0.0) * ΔT₁ * 1000.0
 
 			return ETₒ
 			end  # function: PENMAN_MONTEITH_HOURLY
@@ -47,43 +48,41 @@ module evapoFunc
 		# CONSTANT
 			k [m] von Karman's constant, 0.41 [-],
 		"""
-		function Rₐ_INV_AERODYNAMIC_RESISTANCE(;Hcrop, Karmen, Wind, Z_Humidity, Z_Wind)
-			#------------------------------
-				function Z_ZERO_PLANE(Hcrop)
-					Z_0 = (2.0 / 3.0) * Hcrop
-				return Z_0
-				end
-			#..............................
+			function Rₐ_INV_AERODYNAMIC_RESISTANCE(;Hcrop, Karmen, Wind, Z_Humidity, Z_Wind)
+				#------------------------------
+					function Z_ZERO_PLANE(Hcrop)
+						Z_0 = (2.0 / 3.0) * Hcrop
+					return Z_0
+					end
+				#..............................
 
-			#------------------------------
-				function Z_ROUGHNESS_MOMENTUM(Hcrop)
-					Z_RoughnessMomentum = 0.123 * Hcrop
-				return Z_RoughnessMomentum
-				end  # function: Z_ROUGHNESS_MOMENTUM
-			#.....................................
+				#------------------------------
+					function Z_ROUGHNESS_MOMENTUM(Hcrop)
+						Z_RoughnessMomentum = 0.123 * Hcrop
+					return Z_RoughnessMomentum
+					end  # function: Z_ROUGHNESS_MOMENTUM
+				#.....................................
 
-			#------------------------------
-				function Z_ROUGHNESS_TRANSFER(Z_RoughnessMomentum)
-					Z_RoughnessTransfer = 0.1 * Z_RoughnessMomentum
-					return Z_RoughnessTransfer
-				end  # function: Z_ROUGHNESSMOMENTUM
-			#........................................
+				#------------------------------
+					function Z_ROUGHNESS_TRANSFER(Z_RoughnessMomentum)
+						Z_RoughnessTransfer = 0.1 * Z_RoughnessMomentum
+						return Z_RoughnessTransfer
+					end  # function: Z_ROUGHNESSMOMENTUM
+				#........................................
 
-			Z_0 = Z_ZERO_PLANE(Hcrop)
-			Z_RoughnessMomentum = Z_ROUGHNESS_MOMENTUM(Hcrop)
-			Z_RoughnessTransfer = Z_ROUGHNESS_TRANSFER(Z_RoughnessMomentum)
+				Z_0 = Z_ZERO_PLANE(Hcrop)
+				Z_RoughnessMomentum = Z_ROUGHNESS_MOMENTUM(Hcrop)
+				Z_RoughnessTransfer = Z_ROUGHNESS_TRANSFER(Z_RoughnessMomentum)
 
-			# if Z_Wind < Z_0
-			# 	error("Z_Wind = $Z_Wind ≥ Z_0 = $Z_0")
-			# end
-			# if Z_Humidity < Z_0
-			# 	error("Z_Humidity = $Z_Wind ≥ Z_0 = $Z_0")
-			# end
+				# Rₐ_Inv = ( Wind * Karmen ^ 2 ) / ((log(max(Z_Wind - Z_0, 0.0) / Z_RoughnessMomentum)) * (log(max(Z_Humidity - Z_0, 0.0) / Z_RoughnessTransfer)))
 
-			Rₐ_Inv = ( Wind * Karmen^2 ) / (log(max(Z_Wind - Z_0, 0.0) / Z_RoughnessMomentum) * log(max(Z_Humidity - Z_0, 0.0) / Z_RoughnessTransfer))
-			return Rₐ_Inv
-			end  # function: Rₐ_INV_AERODYNAMIC_RESISTANCE
-		# ------------------------------------------------------------------
+				P_Wind = ((log(max(Z_Wind - Z_0, 0.0) / Z_RoughnessMomentum)) * (log(max(Z_Humidity - Z_0, 0.0) / Z_RoughnessTransfer))) / Karmen ^ 2
+
+				Rₐ_Inv =  Wind /  P_Wind
+
+				return Rₐ_Inv
+				end  # function: Rₐ_INV_AERODYNAMIC_RESISTANCE
+			# ------------------------------------------------------------------
 
 
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,12 +98,14 @@ module evapoFunc
 			function Rₛ_SURFACE_RESISTANCE(;R_Stomatal, Hcrop)
 				LAI = 24.0 * Hcrop
 				LAIactive = LAI * 0.5
+				# LAI = 3.0 # [3 - 4]
+				LAIactive = LAI / (0.3 * LAI + 1.2)
 
 				Rₛ = R_Stomatal / LAIactive
+
 			return Rₛ
 			end  # function: Rₛ_SURFACE_RESISTANCE
 		# ------------------------------------------------------------------
-
 	end  # module: aerodynamic
 	# ............................................................
 
@@ -123,10 +124,10 @@ module evapoFunc
 		INPUT
 			* Temp [ᵒC] air temperature
 		"""
-		function λ_LATENT_HEAT_VAPORIZATION(;Temp)
-			 λᵥ = (2503 - 2.39 * Temp) * 1.0E3
-		return λᵥ
-		end  # function: λ_LATENT_HEAT_VAPORIZATION
+			function λ_LATENT_HEAT_VAPORIZATION(;Temp)
+				λᵥ = (2503 - 2.39 * Temp) * 1.0E3
+			return λᵥ
+			end  # function: λ_LATENT_HEAT_VAPORIZATION
 		# ------------------------------------------------------------------
 
 
@@ -301,9 +302,9 @@ module evapoFunc
 				ωₛᵤₙₛₑₜ = radiation.ωₛ_SUNSET_HOUR_ANGLE(;Latitude_Radian, δ)
 
 				if ωₛᵤₙₛₑₜ < ω_SolarTime || -ωₛᵤₙₛₑₜ > ω_SolarTime
-					return 🎏_Daylight = 0
+					return 🎏_Daylight = false
 				else
-					return 🎏_Daylight = 1
+					return 🎏_Daylight = true
 				end
 			end  # function: DAY_NIGHT
 		# ------------------------------------------------------------------
@@ -323,13 +324,11 @@ module evapoFunc
 		#		FUNCTION : ω_SOLAR_TIME_ANGLE_HOUR
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		""" Solar time angle, accounts that earth rotates 15ᵒ every hour. Hour angle is negative before solar noon, 0 at solar noon and positive afterwards"""
-			function ω_SOLAR_TIME_ANGLE_HOUR(;🎏_Tradition=true, DateTime, Latitude, Longitude, Z_Altitude, ΔT₁, Longitude_LocalTime=0.0)
-
-				🎏_Tradition=true
+			function ω_SOLAR_TIME_ANGLE_HOUR(;🎏_ω_Tradition, DateTime, Latitude, Longitude, Z_Altitude, ΔT₁, Longitude_LocalTime=0.0)
 
 				HourFraction = min(ΔT₁ / (60.0 * 60.0), 1.0)
 
-				if !🎏_Tradition
+				if !🎏_ω_Tradition
 					# define observer location (latitude, longitude, altitude in meters)
 					Obs = Observer(Latitude, Longitude, Z_Altitude)
 
@@ -354,6 +353,7 @@ module evapoFunc
 			end #  ω_SOLAR_TIME_ANGLE_HOUR
 		# ------------------------------------------------------------------
 
+
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		#		FUNCTION : Extraterrestrial_radiation
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -375,7 +375,7 @@ module evapoFunc
 			ω [rad] solar time angle at midpoint of hourly or shorter period [rad]
 			ωₛ [rad] sunset hour angle
 		"""
-		function  Rₐ_EXTRATERRESTRIAL_RADIATION_HOURLY(;DateTime, Gsc, Latitude, Longitude, Longitude_LocalTime = 0.0, Z_Altitude, ΔT₁)
+		function  Rₐ_EXTRATERRESTRIAL_RADIATION_HOURLY(;DateTime, Gsc, Latitude, Longitude, Longitude_LocalTime = 0.0, Z_Altitude, ΔT₁, 🎏_ω_Tradition)
 
 			Latitude_Radian = Latitude * π / 180.0
          DayOfYear       = Dates.dayofyear(DateTime)
@@ -383,7 +383,7 @@ module evapoFunc
 			δ_SOLAR_INCLINATION(DayOfYear) = 0.409 * sin(DayOfYear * 2.0 * π / 365.0 - 1.39)
 				δ = δ_SOLAR_INCLINATION(DayOfYear)
 
-			ω_SolarTime, ω₁, ω₂ = ω_SOLAR_TIME_ANGLE_HOUR(;🎏_Tradition=false, DateTime, Latitude, Longitude, Z_Altitude, Longitude_LocalTime, ΔT₁)
+			ω_SolarTime, ω₁, ω₂ = ω_SOLAR_TIME_ANGLE_HOUR(;🎏_ω_Tradition, DateTime, Latitude, Longitude, Z_Altitude, Longitude_LocalTime, ΔT₁)
 
 			Dₑₛ_INVERSE_DISTANCE_SUN_EARTH(DayOfYear) = 1.0 + 0.033 * cos(DayOfYear * 2.0 * π / 365.0)
 				Dₑₛ = Dₑₛ_INVERSE_DISTANCE_SUN_EARTH(DayOfYear)
@@ -392,7 +392,7 @@ module evapoFunc
 				Hour      = Dates.hour(DateTime)
 				🎏_Daylight = radiation.SUNLIGHT(;ω_SolarTime, Latitude_Radian, δ, Hour)
 
-			Radₐ = 🎏_Daylight * (12.0 * 60 / π) * Gsc * Dₑₛ * ((ω₂ - ω₁) * sin(Latitude_Radian) * sin(δ) + cos(Latitude_Radian) * cos(δ) * (sin(ω₂) - sin(ω₁)))
+			Radₐ = (12.0 * 60 / π) * Gsc * Dₑₛ * ((ω₂ - ω₁) * sin(Latitude_Radian) * sin(δ) + cos(Latitude_Radian) * cos(δ) * (sin(ω₂) - sin(ω₁)))
 		return Radₐ, 🎏_Daylight
 		end  # function: Extraterrestrial_radiation
 		# ------------------------------------------------------------------
@@ -424,19 +424,19 @@ module evapoFunc
 			* σ: [J K-4 m-2 second-1] Stefan-Boltzmann constant;
 			* Temp: [ᵒC] average hourly temperature,
 			* Eₐ: [kPa] actual vapour pressure;
-			* Radₛ: [J m-2 second-1] measured solar radiation;
+			* Radₛᵣ: [J m-2 second-1] measured solar radiation;
 
 		PROCESSES
 			* Radₛₒ: [MJ m-2 second7-1]: clear-sky radiation.
 
-			Radₛ/Radₛₒ relative shortwave radiation (limited to ≤ 1.0),
+			Radₛᵣ/Radₛₒ relative shortwave radiation (limited to ≤ 1.0),
 		"""
-			function Radₙₗ_LONGWAVE_RADIATION(;σ, Temp, Eₐ, Radₛ, T_Kelvin,  Radₛₒ)
+			function Radₙₗ_LONGWAVE_RADIATION(;σ, Temp, Eₐ, Radₛᵣ, T_Kelvin,  Radₛₒ, ϵ=1.0E-5 )
 				# if 🎏_Hourly
 				# T₁ = (σ * ((T_Kelvin + T_Max)^4 + (T_Kelvin + T_Min)^4) / 2.0)
 
 				# Correction for effect of cloundiness
-				Radₙₗ =  (σ * (T_Kelvin + Temp) ^4) * (0.34 - (0.14 * √Eₐ)) * (1.35 * min(Radₛ / Radₛₒ, 1.0) - 0.35)
+				Radₙₗ =  (σ * (T_Kelvin + Temp) ^4) * (0.34 - (0.14 * √Eₐ)) * (1.35 * min(Radₛᵣ / (Radₛₒ + ϵ), 1.0) - 0.35)
 			return Radₙₗ
 			end  # function: Rₙₗ_LONGWAVE RADIATION
 		# ------------------------------------------------------------------
@@ -448,13 +448,13 @@ module evapoFunc
 		 Radₙₛ: [J m-2 second-1] INCOMING NET SHORTWAVE RADIATION
 
 		INPUT
-			* Radₛ: [J m-2 second-1] measured solar radiation;
+			* Radₛᵣ: [J m-2 second-1] measured solar radiation;
 
 		PARAMETER
 			* α: [-] albedo or canopy reflection coefficient, which is 0.23 for the hypothetical grass reference crop
 		"""
-				function Radₙₛ_NET_SHORTWAVE_RADIATION_REFLECTED(;α, Radₛ)
-					Radₙₛ = (1.0 - α ) * Radₛ
+				function Radₙₛ_NET_SHORTWAVE_RADIATION_REFLECTED(;α, Radₛᵣ)
+					Radₙₛ = (1.0 - α ) * Radₛᵣ
 				return Radₙₛ
 				end  # function: Rₙₛ_NET_SHORTWAVE_RADIATION
 
@@ -496,11 +496,7 @@ module evapoFunc
 		INPUT
 			* Rₙ: [MJ m-2 hour-1] measured solar radiation;
 		"""
-			function G_SOIL_HEAT_FLUX_HOURLY(;DateTime, Latitude, Longitude, ΔRadₙ, Z_Altitude, 🎏_Daylight)
-
-				# Determening if daylight or nighttime or daylight
-					# Latitude = (Latitude_ᴼ + Latitude_Minute / 60.0)
-					# Longitude = (Longitude_ᴼ + Longitude_Minute / 60.0)
+			function G_SOIL_HEAT_FLUX_HOURLY(;DateTime, Latitude, Longitude, ΔRadₙ, Z_Altitude, 🎏_Daylight, SoilHeatFlux_Sunlight, SoilHeatFlux_Night)
 
 					Obs = Observer(Latitude, Longitude, Z_Altitude)
 
@@ -514,15 +510,15 @@ module evapoFunc
 					T_Hour = Dates.hour(DateTime)
 
 				if Tsunset_Hour ≥ T_Hour ≥ Tsunrise_Hour
-					return G = 0.1 * ΔRadₙ
+					return G = SoilHeatFlux_Sunlight * ΔRadₙ
 				else
-					return G = 0.5 * ΔRadₙ
+					return G = SoilHeatFlux_Night * ΔRadₙ
 				end
 
-				# if 🎏_Daylight == 1
-				# 	return G = 0.1 * ΔRadₙ
+				# if 🎏_Daylight
+				# 	return G = SoilHeatFlux_Sunlight * ΔRadₙ
 				# else
-				# 	return G = 0.5 * ΔRadₙ
+				# 	return G = SoilHeatFlux_Night * ΔRadₙ
 				# end
 			end  # function: G_SOIL_HEAT_FLUX
 		# ------------------------------------------------------------------
