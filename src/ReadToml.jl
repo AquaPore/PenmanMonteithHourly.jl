@@ -46,19 +46,24 @@ module readtoml
 		Id_End :: Int64
 	end # struct DATE
 
+	@option struct OUTPUT
+		ΔT_Output    :: Integer
+	end # struct DATE
+
 	@option struct FLAG
-      🎏_Ra_Param    :: Bool
-      🎏_Rs_Param    :: Bool
-      🎏_ω_Tradition :: Bool
-      🎏_PetObs     :: Bool
+		🎏_Ra_Param    :: Bool
+		🎏_Rs_Param    :: Bool
+		🎏_ω_Tradition :: Bool
+		🎏_PetObs     :: Bool
 	end # struct DATE
 
 	@option struct OPTION
-		path  :: PATH
-		param :: PARAM
-		cst   :: CST
-		date :: DATE
-		flag :: FLAG
+      path   :: PATH
+      param  :: PARAM
+      cst    :: CST
+      date   :: DATE
+      flag   :: FLAG
+      output :: OUTPUT
 	end
 
 	# ----------------------------

@@ -9,7 +9,9 @@ module pet
 	include("Write.jl")
 	include("ReadToml.jl")
 	include("EvapoFunc.jl")
+	include("Timestep.jl")
 	include("Plot.jl")
+
 
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	#		FUNCTION : PET
@@ -32,15 +34,18 @@ module pet
 
 			# Computing for evey time step
 				Threads.@threads for iT =1:Nmeteo
-
 					Pet_Sim[iT] = pet.PENMAN_MONTEITH(;DayHour, cst=option.cst, iT, Latitude, Longitude, meteo, param=option.param,  ΔT₁=ΔT[iT], option.flag)
 				end # for iT =1:Nmeteo
+
+			# Interpolation
+
+			 ∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, ∑T_Obs, ∑T_Reduced, DayHour_Reduced, Nmeteo_Reduced, Pet_Obs_Reduced, Pet_Sim_Reduced = interpolate.TIME_INTERPOLATION(;Nmeteo, ΔT, Pet_Sim, Pet_Obs, option.output.ΔT_Output, DayHour)
 
 			# Writting output csv
 					write.TABLE_PET(;DayHour, meteo, Nmeteo, option.path, Pet_Sim, Pet_Obs, option.flag)
 
 			# Plotting output
-				plot.PLOT_PET(;DayHour, Pet_Sim, Pet_Obs, Nmeteo, option.path, option.flag)
+				plot.PLOT_PET(;∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, DayHour_Reduced, Nmeteo_Reduced, option.flag, option.path, option.output, Pet_Obs_Reduced, Pet_Sim_Reduced)
 
 		end  # function: PET
 	# ------------------------------------------------------------------
