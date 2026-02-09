@@ -50,6 +50,10 @@ module readtoml
 		ΔT_Output    :: Integer
 	end # struct DATE
 
+      @option struct MISSINGS
+	      ΔTmax_Missing    :: Integer
+		end # struct DATE
+
 	@option struct FLAG
 		🎏_Ra_Param    :: Bool
 		🎏_Rs_Param    :: Bool
@@ -64,6 +68,7 @@ module readtoml
       date   :: DATE
       flag   :: FLAG
       output :: OUTPUT
+		missings :: MISSINGS
 	end
 
 	# ----------------------------

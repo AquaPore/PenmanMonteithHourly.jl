@@ -1,7 +1,7 @@
 # =============================================================
 #		module: timestep
 # =============================================================
-module interpolate
+module interpolation
 
 	using Dates
 
@@ -43,7 +43,7 @@ module interpolate
 				end # while
 				Nmeteo_Reduced = length(∑T_Reduced)
 
-			# Interpolate data
+			# interpolation data
 				∑Pet_Sim_Reduced = fill(0.0::Float64, Nmeteo_Reduced)
 				∑Pet_Obs_Reduced = fill(0.0::Float64, Nmeteo_Reduced)
 

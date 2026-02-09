@@ -3,6 +3,7 @@
 # =============================================================
 module read
 	using Dates, CSV, Tables, DataFrames
+	import ..interpolation
 
 	Base.@kwdef mutable struct METEO
 		# Id
@@ -18,15 +19,15 @@ module read
 		# Velocity of wind speed [M S⁻¹]
       Wind             :: Union{Missing,Vector}
 		# Data which are missing and which were artficially filled
-      🎏_DataMissing   :: Union{Missing,Vector}
+      🎏_DataMissing   :: Vector{Bool}
 	end
 """
 Read weather data from .csv
 
 """
-	function READ_WEATHER(; date, path, flag)
+	function READ_WEATHER(; date, path, flag, missings)
 
-		# Reading data from CSV
+		# READING DATA FROM CSV
 			Path_Input = joinpath(pwd(), path.Path_Input)
 			@assert isfile(Path_Input)
 			Data₀  = CSV.read(Path_Input, DataFrame; header=true)
@@ -49,26 +50,13 @@ Read weather data from .csv
 			Wind₀             = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("WindSpeed[m/s]")))
 
 			if flag.🎏_PetObs
-				Pet_Obs           = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("PotentialEvapotranspiration[mm]")))
+				Pet_Obs = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("PotentialEvapotranspiration[mm]")))
 			else
 				Pet_Obs = zeros(Nmeteo₀)
 			end
 			# 🎏_DataMissing      = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("FlagMissing")))
 
-      RelativeHumidity_Missing = fill(false, Nmeteo₀)
-      SolarRadiation_Missing   = fill(false, Nmeteo₀)
-      Temp_Missing             = fill(false, Nmeteo₀)
-      TempSoil_Missing         = fill(false, Nmeteo₀)
-      Wind_Missing             = fill(false, Nmeteo₀)
-
-
-		# MISSING DATA
-			for iT =1:Nmeteo₀
-
-			end
-
-
-		# Determening period of interest
+		# DETERMENING PERIOD OF INTEREST
 			DateTrue = fill(false, Nmeteo₀)
 			convert(Vector{Bool},DateTrue)
 			for iD=1:Nmeteo₀
@@ -79,7 +67,10 @@ Read weather data from .csv
 				end
 			end
 
-		# Time step
+			# The new number of data
+				Nmeteo = date.Id_End - date.Id_Start + 1
+
+		# TIME-STEP
 			ΔT = zeros(Float64, Nmeteo₀)
 			# Computing ΔT of the time step
 				for iT=date.Id_Start:date.Id_End
@@ -92,34 +83,97 @@ Read weather data from .csv
 				end # for iT=1:Nmeteo
 				ΔT[1] = copy(ΔT[2])
 
-		# Conversion
-			for iT=date.Id_Start:date.Id_End
+		# Reducing the data to the data of interest
+			ΔT = ΔT[DateTrue]
+			DayHour = DayHour[DateTrue]
+
+		🎏_DataMissing = fill(false, Nmeteo)
+
+		# MISSING DATA: linear interpolation between the missing variables
+         RelativeHumidity₀, 🎏_DataMissing = read.FINDING_9999(;Input=RelativeHumidity₀[DateTrue], DayHour, Nmeteo, missings, 🎏_DataMissing, Error=-9999)
+         SolarRadiation₀, 🎏_DataMissing   = read.FINDING_9999(;Input=SolarRadiation₀[DateTrue], DayHour, Nmeteo, missings, 🎏_DataMissing, Error=-9999)
+         Temp₀, 🎏_DataMissing             = read.FINDING_9999(;Input=Temp₀[DateTrue], DayHour, Nmeteo, missings, 🎏_DataMissing, Error=-9999)
+         TempSoil₀, 🎏_DataMissing         = read.FINDING_9999(;Input=TempSoil₀[DateTrue], DayHour, Nmeteo, missings, 🎏_DataMissing, Error=-9999)
+         Wind₀, 🎏_DataMissing             = read.FINDING_9999(;Input=Wind₀[DateTrue], DayHour, Nmeteo, missings, 🎏_DataMissing, Error=-9999)
+
+         Pet_Obs, ~           = read.FINDING_9999(;Input=Pet_Obs[DateTrue], DayHour, Nmeteo, missings, 🎏_DataMissing, Error=-9999)
+
+		# CONVERSION
+			for iT=1:Nmeteo
 				# [%] ➡ [0-1]
 					RelativeHumidity₀[iT] = RelativeHumidity₀[iT] / 100.0
 
 				# Removing negative values
 					Pet_Obs[iT] = max(Pet_Obs[iT], 0.0)
+
+				# Solar radiation filter
+					SolarRadiation₀[iT] = max(SolarRadiation₀[iT] - 0.1, 0.0)
 			end # for iT=1:Nmeteo
 
-      meteo = METEO(Id=Id₀[DateTrue], RelativeHumidity=RelativeHumidity₀[DateTrue], SolarRadiation=SolarRadiation₀[DateTrue], Temp=Temp₀[DateTrue], TempSoil=TempSoil₀[DateTrue], Wind=Wind₀[DateTrue], 🎏_DataMissing=🎏_DataMissing[DateTrue])
+      meteo = METEO(Id=Id₀, RelativeHumidity=RelativeHumidity₀, SolarRadiation=SolarRadiation₀, Temp=Temp₀, TempSoil=TempSoil₀, Wind=Wind₀, 🎏_DataMissing=🎏_DataMissing)
 
-		# The new number of data
-			Nmeteo = date.Id_End - date.Id_Start + 1
-
-		# Testing if missing data
-			FieldName = propertynames(meteo)
-			for iiFieldName ∈ FieldName
-				Struct_Array = getfield(meteo, iiFieldName)
-
-				for iT=1:Nmeteo
-					if ismissing(Struct_Array[iT])
-						@error "$(iiFieldName) cell is empty at Id= $(Id₀[iT])"
-					end
-				end # for iT=1:Nmeteo
-			end # for iiFieldName ∈ FieldName
-
-	return DayHour[DateTrue], meteo, Nmeteo, Pet_Obs[DateTrue], ΔT[DateTrue]
+	return DayHour, meteo, Nmeteo, Pet_Obs, ΔT
 	end # function READ_WEATHER
 
+
+	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	#		FUNCTION : FINDING_999
+	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	""" Linear intyerpolation between the missing data if not greater than 4 hours"""
+		function FINDING_9999(;Input, Nmeteo, DayHour, missings, 🎏_DataMissing, Error= -9999)
+			# Error_9999 = fill(false, N)
+         NoValue_Istart = []
+         NoValue_Iend   = []
+         Error_Count = []
+
+			if Input[Nmeteo] == Error
+				error("Cannot interpolate if for it=N is -9999")
+			end
+
+			iError = 0
+			for iT=1:Nmeteo-1
+				if Input[iT] == Error
+					if Input[max(iT-1,1)] ≠ Error
+						NoValue_Istart = append!(NoValue_Istart, iT)
+						iError = 1
+					end
+
+					if Input[min(iT+1, Nmeteo)] ≠ Error
+						NoValue_Iend = append!(NoValue_Iend, iT)
+
+						Error_Count = append!(Error_Count, iError)
+					else
+						iError += 1
+					end
+				end
+			end # for i=1:N
+
+			@assert length(NoValue_Istart) == length(NoValue_Iend)
+
+			N = length(NoValue_Istart)
+			for iError=1:N
+				ΔT_Error = Dates.value( DayHour[NoValue_Iend[iError]+1] - DayHour[NoValue_Istart[iError]]) / 1000.0
+
+            X1 = max(NoValue_Istart[iError] - 1, 1)
+            Y1 = Input[X1]
+            X2 = min(NoValue_Iend[iError] + 1, Nmeteo)
+            Y2 = Input[X2]
+
+				Intercept, Slope = interpolation.POINTS_2_SlopeIntercept(X1, Y1, X2, Y2)
+
+				for iT =NoValue_Istart[iError]:NoValue_Iend[iError]
+				 	Input[iT] = Slope * Float64(iT) + Intercept
+
+					if missings.ΔTmax_Missing < ΔT_Error
+						🎏_DataMissing[iT] = true
+						@show 🎏_DataMissing[iT]
+					end # if missings.ΔTmax_Missing < ΔT_Error
+
+				end # for iT =NoValue_Istart[iError]:NoValue_Iend[iError]
+			end
+
+		return  Input, 🎏_DataMissing
+		end  # function: FINDING_999
+	# ------------------------------------------------------------------
 end  # module: read
 # ............................................................

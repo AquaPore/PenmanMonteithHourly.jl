@@ -20,7 +20,6 @@ module plot
 			Fig = Figure(font="Sans", titlesize=30,  xlabelsize=20, ylabelsize=20, labelsize=30, fontsize=20)
 
 
-
 			if flag.🎏_PetObs
 				Axis_1 =  Axis(Fig[1, 1], title= " Penman-Monteith $(output.ΔT_Output) second",  yticklabelcolor=:black, yaxisposition=:left, rightspinecolor=:black, ytickcolor=:black, xlabel= L"$PET_{Sim}$ $[mm]$", ylabel= L"$PET_{Obs}$ $[mm]$", xgridvisible=false, ygridvisible=false, width=400, height=400)
 

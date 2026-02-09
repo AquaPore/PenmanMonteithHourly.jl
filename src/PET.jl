@@ -9,9 +9,8 @@ module pet
 	include("Write.jl")
 	include("ReadToml.jl")
 	include("EvapoFunc.jl")
-	include("Timestep.jl")
+	include("Interpolation.jl")
 	include("Plot.jl")
-
 
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	#		FUNCTION : PET
@@ -25,7 +24,7 @@ module pet
             option     = readtoml.READTOML(Path_Toml)
 
 			# Read .csv
-				DayHour, meteo, Nmeteo, Pet_Obs, ΔT = read.READ_WEATHER(; option.date, option.path, option.flag)
+				DayHour, meteo, Nmeteo, Pet_Obs, ΔT = read.READ_WEATHER(; option.date, option.path, option.flag, option.missings)
 
 				Pet_Sim = zeros(Float64, Nmeteo)
 
@@ -38,8 +37,7 @@ module pet
 				end # for iT =1:Nmeteo
 
 			# Interpolation
-
-			 ∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, ∑T_Obs, ∑T_Reduced, DayHour_Reduced, Nmeteo_Reduced, Pet_Obs_Reduced, Pet_Sim_Reduced = interpolate.TIME_INTERPOLATION(;Nmeteo, ΔT, Pet_Sim, Pet_Obs, option.output.ΔT_Output, DayHour)
+			 ∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, ∑T_Obs, ∑T_Reduced, DayHour_Reduced, Nmeteo_Reduced, Pet_Obs_Reduced, Pet_Sim_Reduced = interpolation.TIME_INTERPOLATION(;Nmeteo, ΔT, Pet_Sim, Pet_Obs, option.output.ΔT_Output, DayHour)
 
 			# Writting output csv
 					write.TABLE_PET(;DayHour, meteo, Nmeteo, option.path, Pet_Sim, Pet_Obs, option.flag)
