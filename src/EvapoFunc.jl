@@ -16,6 +16,7 @@ module evapoFunc
 
 				# convert from [m J m-2 second⁻¹] ➡ [mm J m-2 ΔT⁻¹]
 				ETₒ = max(ETₒ, 0.0) * ΔT₁ * 1000.0
+				# ETₒ = ETₒ * ΔT₁ * 1000.0
 
 			return ETₒ
 			end  # function: PENMAN_MONTEITH_HOURLY

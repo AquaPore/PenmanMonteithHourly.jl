@@ -53,7 +53,20 @@ Read weather data from .csv
 			else
 				Pet_Obs = zeros(Nmeteo₀)
 			end
-			🎏_DataMissing      = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("FlagMissing")))
+			# 🎏_DataMissing      = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("FlagMissing")))
+
+      RelativeHumidity_Missing = fill(false, Nmeteo₀)
+      SolarRadiation_Missing   = fill(false, Nmeteo₀)
+      Temp_Missing             = fill(false, Nmeteo₀)
+      TempSoil_Missing         = fill(false, Nmeteo₀)
+      Wind_Missing             = fill(false, Nmeteo₀)
+
+
+		# MISSING DATA
+			for iT =1:Nmeteo₀
+
+			end
+
 
 		# Determening period of interest
 			DateTrue = fill(false, Nmeteo₀)

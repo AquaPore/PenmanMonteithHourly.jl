@@ -79,8 +79,6 @@ module interpolate
 				Pet_Obs_Reduced[iT_Reduced] = ∑Pet_Obs_Reduced[iT_Reduced] - ∑Pet_Obs_Reduced[iT_Reduced-1]
 			end
 
-			println(DayHour_Reduced[1:10])
-
 		return ∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, ∑T_Obs, ∑T_Reduced, DayHour_Reduced, Nmeteo_Reduced, Pet_Obs_Reduced, Pet_Sim_Reduced
 		end  # function: TIMESETP
 	# ------------------------------------------------------------------
