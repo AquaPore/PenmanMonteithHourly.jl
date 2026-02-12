@@ -4,58 +4,79 @@ include(raw"src\\PET.jl")
 
 module pet
 	import Dates, CSV, Tables
-	using Suppressor
+	using Suppressor, Logging
 	export RUN_PET
 
 	@suppress begin
 		include("Read.jl")
 		include("Write.jl")
 		include("ReadToml.jl")
-		include("EvapoFunc.jl")
+		include("PetFunc.jl")
 		include("Interpolation.jl")
 		include("Plot.jl")
 
-		import ..interpolation, ..evapoFunc, ..evapoFunc, ..plot, ..read, ..write, ..readtoml
+		global_logger(ConsoleLogger())
+
+		import ..interpolation, ..petFunc, ..petFunc, ..plot, ..read, ..write, ..readtoml
+		export RUN_PET
 	end
 
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	#		FUNCTION : PET
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		function RUN_PET(;α=-9999, Z_Altitude=-9999, Latitude=-9999, Longitude=-9999)
-			printstyled("======= Start Running PET ========== \n", color=:green)
+		function RUN_PET(;Path_Toml, α=-9999, Zaltitude=-99999)
+			printstyled("======= Start Running PET ========== \n", color=:red)
+			println(" ")
 
 			# Read TOML input file
-            Path_Toml₀ = raw"DATA\PARAMETER\PetOption.toml"
-            Path_Toml  = joinpath(pwd(), Path_Toml₀)
-            option     = readtoml.READTOML(Path_Toml)
+            Path_Toml₁  = joinpath(pwd(), Path_Toml)
+            option     = readtoml.READTOML(Path_Toml₁)
 
-			# Input which remain constant
-				# Latitude, Longitude = pet.PENMAN_MONTEITH_CONSTANT(; option.param.Latitude_Minute, option.param.Latitude_ᴼ, option.param.Longitude_Minute, option.param.Longitude_ᴼ)
+			# Default values in input and not from TOML
+				if  α > 0.0 option.param.α = α end
+				if  Zaltitude > 0.0 option.param.Zaltitude=Zaltitude end
 
-			# Read .csv
+
+			# Reading CSV & filling up missing
+			printstyled( "	===== Start reading & interpolate ===== \n"; color=:green)
 				DayHour, meteo, Nmeteo, Pet_Obs, ΔT= read.READ_WEATHER(; option.date, option.path, option.flag, option.missings, option.param)
+			printstyled( "	===== End reading ===== \n"; color=:green)
+			println("")
 
 				Pet_Sim = zeros(Float64, Nmeteo)
 
-			# Computing for evey time step
-				# Threads.@threads
-				for iT =1:Nmeteo
-					Pet_Sim[iT] = pet.PENMAN_MONTEITH(;cst=option.cst, DayHour, flag=option.flag, iT, Latitude=option.param.Latitude, Longitude=option.param.Longitude, meteo, param=option.param, ΔT₁=ΔT[iT])
+			# Computing for evey time step PET
+				Threads.@threads for iT =1:Nmeteo
+					Pet_Sim[iT] = pet.PENMAN_MONTEITH(;cst=option.cst, DayHour, flag=option.flag, iT, meteo, param=option.param, ΔT₁=ΔT[iT])
 				end # for iT =1:Nmeteo
-
-				Max_Pet = maximum(Pet_Sim[:])
-				printstyled( "=	=== Maximum Pet = $(Max_Pet) === \n"; color=:green)
 
 			# Interpolation
 				∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, DayHour_Reduced, Nmeteo_Reduced, Pet_Obs_Reduced, Pet_Sim_Reduced = interpolation.TIME_INTERPOLATION(;Nmeteo, ΔT, Pet_Sim, Pet_Obs, option.output.ΔT_Output, DayHour)
 
+			# Plotting output
+			if option.flag.🎏_Plot
+			printstyled( "	===== Start plotting ===== \n"; color=:green)
+				plot.PLOT_PET(;∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, DayHour_Reduced, Nmeteo_Reduced, flag=option.flag, path=option.path, output=option.output, Pet_Obs_Reduced, Pet_Sim_Reduced)
+			printstyled( "	===== End plotting ===== \n"; color=:green)
+			println("")
+			end
+
 			# Writting output csv
+			if option.flag.🎏_Table
+			printstyled( "	===== Start writing table ===== \n"; color=:green)
+
 				write.TABLE_PET(;DayHour, meteo, Nmeteo, option.path, Pet_Sim, Pet_Obs, option.flag)
 
-			# Plotting output
-			printstyled( "		==== Start plotting ==== \n"; color=:green)
-				plot.PLOT_PET(;∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, DayHour_Reduced, Nmeteo_Reduced, flag=option.flag, path=option.path, output=option.output, Pet_Obs_Reduced, Pet_Sim_Reduced)
+				write.TABLE_PET_ΔToutput(;DayHour_Reduced, Pet_Obs_Reduced, Pet_Sim_Reduced, option.path, option.flag)
 
+			printstyled( "	===== End writing table ===== \n"; color=:green)
+			println("")
+			end
+
+		println(" ")
+		printstyled("======= End Running PET ========== \n", color=:red)
+
+		return DayHour, DayHour_Reduced, Pet_Obs, Pet_Obs_Reduced, Pet_Sim, Pet_Sim_Reduced;
 		end  # function: PET
 	# ------------------------------------------------------------------
 
@@ -65,7 +86,7 @@ module pet
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	# 	function PENMAN_MONTEITH_CONSTANT(;Latitude_Minute, Latitude_ᴼ, Longitude_Minute, Longitude_ᴼ)
 
-	# 		Latitude, Longitude = evapoFunc.utils.LATITUDE_DEGREE_HOUR_2_DEGREE(;Latitude_Minute, Latitude_ᴼ,Longitude_Minute, Longitude_ᴼ)
+	# 		Latitude, Longitude = petFunc.utils.LATITUDE_DEGREE_HOUR_2_DEGREE(;Latitude_Minute, Latitude_ᴼ,Longitude_Minute, Longitude_ᴼ)
 	# 			println("Latitude= ", Latitude )
 	# 			println("Longitude= ", Longitude )
 
@@ -77,7 +98,7 @@ module pet
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	#		FUNCTION : PENMAN_MONTEITH
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		function PENMAN_MONTEITH(;cst, DayHour, flag, iT, Latitude, Longitude, meteo, param, ΔT₁)
+		function PENMAN_MONTEITH(;cst, DayHour, flag, iT, meteo, param, ΔT₁)
 
 			# Reading data
             RelativeHumidity = meteo.RelativeHumidity[iT]
@@ -87,50 +108,51 @@ module pet
             Wind             = meteo.Wind[iT]
             DateTimeMinute   = DayHour[iT]
 
-			λᵥ = evapoFunc.physics.λ_LATENT_HEAT_VAPORIZATION(;Temp)
+			λᵥ = petFunc.physics.λ_LATENT_HEAT_VAPORIZATION(;Temp)
 
-			Pressure = evapoFunc.physics.ATMOSPHERIC_PRESSURE(;T_Kelvin=cst.T_Kelvin, Temp, Z_Altitude=param.Z_Altitude)
+			Pressure = petFunc.physics.ATMOSPHERIC_PRESSURE(;T_Kelvin=cst.T_Kelvin, Temp, Zaltitude=param.Zaltitude)
 
-			Radₐ= evapoFunc.radiation.Rₐ_EXTRATERRESTRIAL_RADIATION_HOURLY(;DateTimeMinute, Gsc=cst.Gsc, Latitude, Longitude, Z_Altitude=param.Z_Altitude, ΔT₁)
+			Radₐ= petFunc.radiation.Rₐ_EXTRATERRESTRIAL_RADIATION_HOURLY(;DateTimeMinute, Gsc=cst.Gsc, param.Latitude, param.Longitude, Zaltitude=param.Zaltitude, Longitude_LocalTime=param.Longitude_LocalTime, ΔT₁)
 
-			# 🎏_Ra_Param = true
-			if flag.🎏_Ra_Param
-				Rₐ_Inv =  Wind / param.Ra_Param
+			# 🎏_RaParam = true
+			if flag.🎏_RaParam
+				Rₐ_Inv =  Wind / param.RaParam
 			else
-				Rₐ_Inv = evapoFunc.aerodynamic.Rₐ_INV_AERODYNAMIC_RESISTANCE(;param.Hcrop, cst.Karmen, Wind, param.Z_Humidity, param.Z_Wind)
+				Rₐ_Inv = petFunc.aerodynamic.Rₐ_INV_AERODYNAMIC_RESISTANCE(;Hcrop=param.Hcrop, Karmen=cst.Karmen, Wind, Z_Humidity=param.Z_Humidity, Z_Wind=param.Z_Wind)
 			end
 
-			if flag.🎏_Rs_Param
+			if flag.🎏_RsParam
 				Rₛ = param.Rₛ
 			else
-				Rₛ = evapoFunc.aerodynamic.Rₛ_SURFACE_RESISTANCE(;param.R_Stomatal, param.Hcrop)
+				Rₛ = petFunc.aerodynamic.Rₛ_SURFACE_RESISTANCE(;param.R_Stomatal, param.Hcrop)
 			end
 
-			γ = evapoFunc.physics.γ_PSYCHROMETRIC(;cst.Cₚ, Pressure, cst.ϵ, λᵥ)
+			γ = petFunc.physics.γ_PSYCHROMETRIC(;Cₚ=cst.Cₚ, Pressure, ϵ=cst.ϵ, λᵥ)
 
-			Δ = evapoFunc.humidity.Δ_SATURATION_VAPOUR_P_CURVE(;Temp)
+			Δ = petFunc.humidity.Δ_SATURATION_VAPOUR_P_CURVE(;Temp)
 
-			Eₛ = evapoFunc.humidity.Eᴼ_SATURATION_VAPOUR_PRESSURE(;Temp)
+			Eₛ = petFunc.humidity.Eᴼ_SATURATION_VAPOUR_PRESSURE(;Temp)
 
-			Eₐ = evapoFunc.humidity.Eₐ_ACTUAL_VAPOUR_PRESSURE_RH(;RelativeHumidity, Eₛ)
+			Eₐ = petFunc.humidity.Eₐ_ACTUAL_VAPOUR_PRESSURE_RH(;RelativeHumidity, Eₛ)
 
-			ρₐᵢᵣ = evapoFunc.physics.ρₐᵢᵣ_AIR_DENSITY(;Pressure, Temp, cst.T_Kelvin, cst.ℜ, Eₐ)
+			ρₐᵢᵣ = petFunc.physics.ρₐᵢᵣ_AIR_DENSITY(;Pressure, Temp, T_Kelvin=cst.T_Kelvin, ℜ=cst.ℜ, Eₐ)
 
-			Radₛₒ = evapoFunc.radiation.Radₛₒ_CLEAR_SKY_RADIATION(;Radₐ, param.Z_Altitude)
+			Radₛₒ = petFunc.radiation.Radₛₒ_CLEAR_SKY_RADIATION(;Radₐ, Zaltitude=param.Zaltitude)
 
-			Radₙₗ = evapoFunc.radiation.Radₙₗ_LONGWAVE_RADIATION(;cst.σ, Temp, Eₐ, Radₛᵣ, cst.T_Kelvin,  Radₛₒ)
+			Radₙₗ = petFunc.radiation.Radₙₗ_LONGWAVE_RADIATION(;cst.σ, Temp, Eₐ, Radₛᵣ, T_Kelvin=cst.T_Kelvin, Radₛₒ)
 
-			Radₙₛ = evapoFunc.radiation.Radₙₛ_NET_SHORTWAVE_RADIATION_REFLECTED(;param.α, Radₛᵣ)
+			Radₙₛ = petFunc.radiation.Radₙₛ_NET_SHORTWAVE_RADIATION_REFLECTED(;α=param.α, Radₛᵣ)
 
-			ΔRadₙ = evapoFunc.radiation.ΔRadₙ_NET_RADIATION(;Radₙₗ, Radₙₛ)
+			ΔRadₙ = petFunc.radiation.ΔRadₙ_NET_RADIATION(;Radₙₗ, Radₙₛ)
 
-			G = evapoFunc.ground.G_SOIL_HEAT_FLUX_HOURLY(;DateTimeMinute, Latitude, Longitude, ΔRadₙ, param.Z_Altitude, SoilHeatFlux_Sunlight=param.SoilHeatFlux_Sunlight, SoilHeatFlux_Night=param.SoilHeatFlux_Night )
+			G = petFunc.ground.G_SOIL_HEAT_FLUX_HOURLY(;DateTimeMinute, Latitude=param.Latitude, Longitude=param.Longitude, ΔRadₙ, param.Zaltitude, SoilHeatFlux_Sunlight=param.SoilHeatFlux_Sunlight, SoilHeatFlux_Night=param.SoilHeatFlux_Night )
 
-			Pet_Sim = evapoFunc.penmanmonteith.PET_PENMAN_MONTEITH_HOURLY(;cst.Cₚ, param.Kc, Eₐ, Eₛ, G, Rₐ_Inv, ΔRadₙ, Rₛ, γ, Δ, λᵥ, ρₐᵢᵣ, ΔT₁, cst.ρwater)
+			Pet_Sim = petFunc.penmanmonteith.PET_PENMAN_MONTEITH_HOURLY(;Cₚ=cst.Cₚ, Eₐ, Eₛ, G, Rₐ_Inv, ΔRadₙ, Rₛ, γ, Δ, λᵥ, ρₐᵢᵣ, ΔT₁, ρwater=cst.ρwater)
 
 		return Pet_Sim
 		end  # function: PENMAN_MONTEITH
 	#------------------------------------------------------------------
 end
 
-pet.RUN_PET(;α=0.2)
+Path_Toml = raw"DATA\PARAMETER\PetOption.toml"
+DayHour, DayHour_Reduced, Pet_Obs, Pet_Obs_Reduced, Pet_Sim, Pet_Sim_Reduced = pet.RUN_PET(;Path_Toml, α=0.23);

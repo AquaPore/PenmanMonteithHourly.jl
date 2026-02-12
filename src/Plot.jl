@@ -54,7 +54,7 @@ module plot
 
 			Path_Output = joinpath(pwd(), path.Path_Output_Plot)
 			CairoMakie.save(Path_Output, Fig)
-			println("			 ~ ", Path_Output, "~")
+			println("		~~ ", Path_Output, "~~")
 
 		return nothing
 		end  # function: PLOT_PET

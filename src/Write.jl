@@ -46,6 +46,7 @@ module write
 		function TABLE_PET(;DayHour, meteo, Nmeteo, Pet_Sim, Pet_Obs, path, flag)
 
 			Path_Output = joinpath(pwd(), path.Path_Output_Csv)
+			println("		~~ ", Path_Output, "~~")
 
 			Matrix₁, FieldName_String = write.STRUCT_2_FIELDNAME(Nmeteo, meteo)
 
@@ -56,8 +57,6 @@ module write
 				push!(FieldName_String, string("Pet_Obs")) # Write the "Id" at the very begenning
 			end
 
-			println(FieldName_String)
-
 			if flag.🎏_PetObs
 				CSV.write(Path_Output, Tables.table([DayHour Matrix₁ Pet_Sim Pet_Obs]), writeheader=true, header=FieldName_String, bom=true)
 			else
@@ -66,6 +65,27 @@ module write
 		return nothing
 		end  # function: TABLE_PET
 	# ------------------------------------------------------------------
+
+
+	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	#		FUNCTION : TABLE_PET_ΔToutput
+	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		function TABLE_PET_ΔToutput(;DayHour_Reduced, Pet_Obs_Reduced, Pet_Sim_Reduced, path, flag)
+
+			Path_Output = joinpath(pwd(), path.Path_Output_ΔToutput_Csv)
+			println("		~~ ", Path_Output, "~~")
+
+			if flag.🎏_PetObs
+				Header = ["Date", "Pet_Obs", "Pet_Sim"]
+				CSV.write(Path_Output, Tables.table([DayHour_Reduced Pet_Obs_Reduced Pet_Sim_Reduced]), writeheader=true, header=Header, bom=true)
+			else
+				Header = ["Date", "Pet_Obs"]
+				CSV.write(Path_Output, Tables.table([DayHour_Reduced Pet_Obs_Reduced ]), writeheader=true, header=Header, bom=true)
+			end
+		return nothing
+		end  # function: TABLE_PET
+	# ------------------------------------------------------------------
+
 
 
 end  # module: write

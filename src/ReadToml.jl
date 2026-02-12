@@ -9,22 +9,23 @@ module readtoml
       Path_Input       :: String
       Path_Output_Csv  :: String
       Path_Output_Plot :: String
+		Path_Output_ΔToutput_Csv :: String
 	end # struct DATA
 
-	@option struct PARAM
+	@option mutable struct PARAM
       Hcrop                 :: Float64
-      Latitude            :: Float64
-      Longitude           :: Float64
+      Latitude              :: Float64
+      Longitude             :: Float64
+      Longitude_LocalTime   :: Float64
       R_Stomatal            :: Float64
-      Z_Altitude            :: Float64
+      Zaltitude             :: Float64
       Z_Humidity            :: Float64
       Z_Wind                :: Float64
       α                     :: Float64
-      Kc                    :: Float64
       SoilHeatFlux_Sunlight :: Float64
       SoilHeatFlux_Night    :: Float64
       Rₛ                    :: Float64
-      Ra_Param              :: Float64
+      RaParam               :: Float64
 	end # STRUCT PARAM
 
 	@option struct CST
@@ -39,23 +40,27 @@ module readtoml
 	end # struct CST
 
 	@option struct DATE
-      Id_Start ::Int64
-		Id_End :: Int64
+      # Id_Start ::Int64
+		# Id_End :: Int64
+		Date_Start::Vector{Int}
+		Date_End::Vector{Int}
 	end # struct DATE
 
 	@option struct OUTPUT
 		ΔT_Output    :: Integer
 	end # struct DATE
 
-      @option struct MISSINGS
-         ΔTmax_Missing :: Integer
-         MissingValue  :: Integer
-		end # struct DATE
+	@option struct MISSINGS
+		ΔTmax_Missing :: Integer
+		MissingValue  :: Integer
+	end # struct DATE
 
 	@option struct FLAG
-		🎏_Ra_Param    :: Bool
-		🎏_Rs_Param    :: Bool
-		🎏_PetObs     :: Bool
+      🎏_RaParam :: Bool
+      🎏_RsParam :: Bool
+      🎏_PetObs   :: Bool
+      🎏_Plot     :: Bool
+      🎏_Table    :: Bool
 	end # struct DATE
 
 	@option struct OPTION

@@ -3,7 +3,7 @@
 # =============================================================
 module read
 	using Dates, CSV, Tables, DataFrames, Logging, Revise
-	import ..interpolation, ..evapoFunc
+	import ..interpolation, ..petFunc
 
 	global_logger(ConsoleLogger())
 
@@ -24,13 +24,14 @@ module read
       🎏_DataMissing   :: Vector{Bool}
 	end
 """
-Read weather data from .csv
+Read weather data from .csv 
 
 """
 	function READ_WEATHER(;date, path, flag, missings, param)
 
 		# READING DATA FROM CSV
 			Path_Input = joinpath(pwd(), path.Path_Input)
+			println("		~~ ", Path_Input, "~~")
 				@assert isfile(Path_Input)
 
 			Data₀  = CSV.read(Path_Input, DataFrame; header=true)
@@ -52,7 +53,7 @@ Read weather data from .csv
 			TempSoil₀         = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("SoilTemperature[°C]")))
 			Wind₀             = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("WindSpeed[m/s]")))
 
-			if flag.🎏_PetObs
+			if flag.🎏_PetObs && ("PotentialEvapotranspiration[mm]" ∈ names(Data₀))
 				Pet_Obs = convert(Union{Vector,Missing}, Tables.getcolumn(Data₀, Symbol.("PotentialEvapotranspiration[mm]")))
 			else
 				Pet_Obs = zeros(Nmeteo₀)
@@ -60,12 +61,17 @@ Read weather data from .csv
 
 		# DETERMENING PERIOD OF INTEREST
 			DateTrue = fill(false, Nmeteo₀)
-			for iD=1:Nmeteo₀
-				if date.Id_Start ≤ iD ≤ date.Id_End
-					DateTrue[iD] = true
+			DateStart = Dates.Date(Dates.Year(date.Date_Start[1]),Dates.Month(date.Date_Start[2]),Dates.Day(date.Date_Start[3]),Dates.Hour(date.Date_Start[4]), Dates.Minute(date.Date_Start[5]))
+
+			DateEnd = Dates.Date(Dates.Year(date.Date_End[1]),Dates.Month(date.Date_End[2]),Dates.Day(date.Date_End[3]),Dates.Hour(date.Date_End[4]), Dates.Minute(date.Date_End[5]))
+
+			for iT=1:Nmeteo₀
+				if DateStart ≤ DayHour[iT] ≤ DateEnd
+					DateTrue[iT] = true
 				end
-			end # for iD=1:Nmeteo₀
+			end # for iT=1:Nmeteo₀
 			Nmeteo = sum(DateTrue)
+			@assert Nmeteo ≥ 1
 
 		# Reducing the data to the data of interest
          Id₀               = Id₀[DateTrue]
@@ -89,12 +95,6 @@ Read weather data from .csv
 
 				@assert minimum(ΔT)==maximum(ΔT)
 
-			# Wind₀ .= 0.0
-			# SolarRadiation₀ .= 66.97
-			# Temp₀ .= 10.41
-			# RelativeHumidity₀ .= 69.09
-			# TempSoil₀ .= 0.0
-
 			# MISSING DATA: linear interpolation between the missing variables
 				🎏_DataMissing = fill(false, Nmeteo)
 				SolarRadiation₀, 🎏_DataMissing   = read.FINDING_9999(;Input=SolarRadiation₀, DayHour, Nmeteo, missings,🎏_DataMissing, Error=missings.MissingValue)
@@ -103,7 +103,7 @@ Read weather data from .csv
 					for iT=1:Nmeteo
 						if 🎏_DataMissing[iT]
 
-							🎏_Daylight = evapoFunc.radiation.SUNLIGHT_HOURS(;DateTimeMinute=DayHour[iT], param.Latitude, param.Longitude, param.Z_Altitude)
+							🎏_Daylight = petFunc.radiation.SUNLIGHT_HOURS(;DateTimeMinute=DayHour[iT], param.Latitude, param.Longitude, param.Zaltitude)
 
 							if !(🎏_Daylight)
 								SolarRadiation₀[iT] = min(SolarRadiation₀[iT], 10.0)
@@ -128,7 +128,7 @@ Read weather data from .csv
 					for iT=1:Nmeteo
 						if 🎏_DataMissing[iT]
 
-							🎏_Daylight = evapoFunc.radiation.SUNLIGHT_HOURS(;DateTimeMinute=DayHour[iT], param.Latitude, param.Longitude, param.Z_Altitude)
+							🎏_Daylight = petFunc.radiation.SUNLIGHT_HOURS(;DateTimeMinute=DayHour[iT], param.Latitude, param.Longitude, param.Zaltitude)
 
 							if !(🎏_Daylight)
 								🎏_DataMissing[iT] = false
@@ -139,7 +139,7 @@ Read weather data from .csv
 						end # if 🎏_DataMissing[iT]
 					end # for iT=1:Nmeteo
 					if iiMissing ≥ 1
-						@warn "No of Missing data = $iiMissing"
+						printstyled("		WARNING: Number of Missing data = $iiMissing"; color=:yellow)
 						println("")
 					end
 
