@@ -13,8 +13,8 @@
 src/Data
 /docs/
 .gitignore
-Manifest.toml
-Project.toml
+# Manifest.toml
+# Project.toml
 # *.toml
 /Data/
 # Manifest.*
