@@ -1,10 +1,10 @@
 [![Build Status](https://github.com/AquaPore/PET.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/AquaPore/PET.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 
-\usepackage{amsmath}
 
-# POTENTIAL EVAPOTRANSPIRATION PENMAN MONTEITH FAO 56
+# **POTENTIAL EVAPOTRANSPIRATION PENMAN MONTEITH FAO 56**
+# *For timestep less or equal than an hour*
 
-# For timestep less or equal than an hour
+# F
 
 # PARTICULAR OF THIS SOFTWARE
 
