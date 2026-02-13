@@ -111,3 +111,6 @@ The Penman-Monteith model is written as follow:
 ``` math
 ETₒ=\frac{\varDelta (\varDelta _{Radₙ}-G)+\frac{\rho _{ₐᵢᵣ}\,\,C_ₚ(Eₛ-Eₐ)}{Rₐ}}{\varDelta +\gamma \,\,\left( 1+\frac{Rₛ}{Rₐ} \right) \,\,\lambda _ᵥ\,\,\rho _{water}}
 ```
+
+# RUN MODEL
+
