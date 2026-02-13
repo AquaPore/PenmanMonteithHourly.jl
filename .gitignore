@@ -4,7 +4,7 @@
 *.jl.mem
 *.jl.*.mem
 *.ipynb
-*.vscode
+/vscode/
 
 # pixi environments
 .pixi
