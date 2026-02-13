@@ -6,7 +6,7 @@ module write
 	import Dates, CSV, Tables
 
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	#		FUNCTION : STRUCT_2_FIELDNAMES
+	#		FUNCTION : STRUCT_2_FIELDNAMESs
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		function STRUCT_2_FIELDNAME(N::Int64, Structure)
 			FieldName_Array = propertynames(Structure)
