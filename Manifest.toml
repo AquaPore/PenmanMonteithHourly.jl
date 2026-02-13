@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "f1ddd3504b4fc3e33a03d799e2957c087957c734"
+project_hash = "9c1bc3cec466d10302d037409cd972e15ee9b6de"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1074,10 +1074,10 @@ weakdeps = ["StatsBase"]
     StatsBaseExt = "StatsBase"
 
 [[deps.PET]]
-deps = ["CSV", "CairoMakie", "Configurations", "DataFrames", "Dates", "HTTP", "Logging", "Makie", "SolarPosition", "Suppressor", "TOML", "Tables", "TimeZones", "Unitful", "ZipFile"]
+deps = ["CSV", "CairoMakie", "Configurations", "DataFrames", "Dates", "HTTP", "Logging", "Makie", "Revise", "SolarPosition", "Suppressor", "TOML", "Tables", "TimeZones", "Unitful", "ZipFile"]
 path = "."
 uuid = "818149cd-5caa-400d-8d3a-cc13d265cce7"
-version = "1.0.0-DEV"
+version = "1.0.0"
 
 [[deps.PNGFiles]]
 deps = ["Base64", "CEnum", "ImageCore", "IndirectArrays", "OffsetArrays", "libpng_jll"]

@@ -79,8 +79,8 @@ module write
 				Header = ["Date", "Pet_Obs", "Pet_Sim"]
 				CSV.write(Path_Output, Tables.table([DayHour_Reduced Pet_Obs_Reduced Pet_Sim_Reduced]), writeheader=true, header=Header, bom=true)
 			else
-				Header = ["Date", "Pet_Obs"]
-				CSV.write(Path_Output, Tables.table([DayHour_Reduced Pet_Obs_Reduced ]), writeheader=true, header=Header, bom=true)
+				Header = ["Date", "Pet_Sim"]
+				CSV.write(Path_Output, Tables.table([DayHour_Reduced Pet_Sim_Reduced ]), writeheader=true, header=Header, bom=true)
 			end
 		return nothing
 		end  # function: TABLE_PET

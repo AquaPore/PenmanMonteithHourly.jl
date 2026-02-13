@@ -2,11 +2,10 @@
 include(raw"src\\PET.jl")
 """
 
-module pet
-	import Dates, CSV, Tables, DataFrames, Logging, Revise, Configurations, TOML, SolarPosition, TimeZones
+module PenmanMonteithHourly
+	import Dates, CSV, Tables, DataFrames, Logging, Revise, Configurations, TOML, SolarPosition, TimeZones, Revise
 
-
-	export PenmanMonteithHourly
+	export PENMAN_MONTEITH_HOURLY_RUN
 
 		include("Interpolation.jl")
 		include("ReadToml.jl")
@@ -18,7 +17,7 @@ module pet
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	#		FUNCTION : PET
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		function PenmanMonteithHourly(;Path_Toml, α=-9999, Zaltitude=-99999, Date_Start=[], Date_End=[])
+		function PENMAN_MONTEITH_HOURLY_RUN(;Path_Toml, α=-9999, Zaltitude=-99999, Date_Start=[], Date_End=[])
 			printstyled("======= Start Running PET ========== \n", color=:red)
 			println(" ")
 
@@ -43,7 +42,7 @@ module pet
 
 			# Computing for evey time step PET
 				Threads.@threads for iT =1:Nmeteo
-					Pet_Sim[iT] = pet.PENMAN_MONTEITH(;cst=option.cst, DayHour, flag=option.flag, iT, meteo, param=option.param, ΔT₁=ΔT[iT])
+					Pet_Sim[iT] = PenmanMonteithHourly.PENMAN_MONTEITH(;cst=option.cst, DayHour, flag=option.flag, iT, meteo, param=option.param, ΔT₁=ΔT[iT])
 				end # for iT =1:Nmeteo
 
 			# Interpolation
@@ -153,4 +152,4 @@ end
 # include("src/PenmanMonteithHourly.jl")
 # Path_Toml = raw"DATA\PARAMETER\PetOption.toml"
 
-# DayHour, DayHour_Reduced, Pet_Obs, Pet_Obs_Reduced, Pet_Sim, Pet_Sim_Reduced = pet.PenmanMonteithHourly(;Path_Toml, α=0.23);
+# DayHour, DayHour_Reduced, Pet_Obs, Pet_Obs_Reduced, Pet_Sim, Pet_Sim_Reduced = PenmanMonteithHourly.PENMAN_MONTEITH_HOURLY_RUN(;Path_Toml, α=0.23);

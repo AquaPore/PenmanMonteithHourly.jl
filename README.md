@@ -114,3 +114,9 @@ ETₒ=\frac{\varDelta (\varDelta _{Radₙ}-G)+\frac{\rho _{ₐᵢᵣ}\,\,C_ₚ(E
 
 # RUN MODEL
 
+```julia
+
+include("src/PenmanMonteithHourly.jl")
+Path_Toml = raw"DATA\PARAMETER\PetOption.toml"
+DayHour, DayHour_Reduced, Pet_Obs, Pet_Obs_Reduced, Pet_Sim, Pet_Sim_Reduced = pet.PenmanMonteithHourly(;Path_Toml, α=0.23);
+```
