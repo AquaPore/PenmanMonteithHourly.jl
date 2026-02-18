@@ -92,7 +92,7 @@ function PLOT_PET(; ∑Pet_Obs_Reduced, ∑Pet_Sim_Reduced, DayHour_Reduced, Nme
 	trim!(Fig.layout)
 	display(Fig)
 
-	Path_Output = joinpath(pwd(), path.Path_Output_Plot)
+	Path_Output = joinpath(pwd(),  path.Path_Output, path.StationName, path.Filename_Output_Plot)
 	CairoMakie.save(Path_Output, Fig)
 	println("		~~ ", Path_Output, "~~")
 

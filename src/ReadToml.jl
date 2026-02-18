@@ -6,10 +6,14 @@ module readtoml
 using Configurations, TOML
 
 @option struct PATH
+	StationName ::String
 	Path_Input::String
-	Path_Output_Csv::String
-	Path_Output_Plot::String
-	Path_Output_ΔToutput_Csv::String
+	Path_Output::String
+	Filename_Input_ClimateCsv::String
+   Filename_Output_Plot::String
+   Filename_Output_TableCsv::String
+   Filename_Output_TableΔTCsv::String
+
 end # struct DATA
 
 @option mutable struct PARAM
