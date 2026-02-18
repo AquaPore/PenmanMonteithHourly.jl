@@ -5,7 +5,7 @@
 # *For variable timestep less or equal than an hour*
 
 
-# PARTICULARITY OF THIS SOFTWARE
+# PARTICULARITY OF THIS SOFTWARES
 
 * Adjuste output to any time step;
 * Correct for missing data by linear interpolation;
