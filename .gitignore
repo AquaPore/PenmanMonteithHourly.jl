@@ -1,16 +1,19 @@
 # Packaging stuff
-# *.jl.*.cov
-# *.jl.cov
-# *.jl.mem
-# *.jl.*.mem
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+*.jl.*.mem
+
+CL.yml
 *.ipynb
 /.vscode/
-
+/Docs/
+/Other/
 # pixi environments
 
 
 # # Joseph
-/Papers/
+
 # # .gitignore
 /Data/
 # # Manifest.toml

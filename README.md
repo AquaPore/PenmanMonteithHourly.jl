@@ -10,7 +10,7 @@
 * Adjuste output to any time step;
 * Correct for missing data by linear interpolation;
 * Flags missing data were interpolation is not possible;
-* Write output to time step of interest ΔT;
+* Table output to time step of interest ΔT;
 * Options in TOML;
 
 ## INPUT DATA
