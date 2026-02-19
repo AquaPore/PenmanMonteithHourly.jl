@@ -21,7 +21,7 @@ include("Interpolation.jl")
 include("ReadToml.jl")
 include("PetFunc.jl")
 include("Plot.jl")
-include("Table.jl")
+include("Tables.jl")
 include("Read.jl")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
