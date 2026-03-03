@@ -9,24 +9,7 @@ CL.yml
 /.vscode/
 /Docs/
 /Other/
-# pixi environments
-
-
-# # Joseph
-
-# # .gitignore
 /Data/
-# # Manifest.toml
-# Project.toml
-# *.toml
-# Manifest.*
-# Project.*
-
-
-# Data/*
-# *.[src/Data]
-# **/Data
-# # *.[.toml]
 
 PET_Vscode.jl.code-workspace
 

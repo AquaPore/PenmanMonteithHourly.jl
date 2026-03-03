@@ -45,7 +45,6 @@ Path_Output_Csv  = "DATA\\OUTPUT\\Timoleague_Pet_10minutes.csv"
 "Path_Output_ΔToutput_Csv"  = "DATA\\OUTPUT\\Timoleague_Pet_ΔToutput.csv" # COutput csv table with timestep ΔT_Output
 
 [date]
-
 Date_Start = [2020,10,1,0,0] # Starting date of simulation [Year, Month, Day, Hour, Minute]
 Date_End = [2026,1,26,7,0]   # Ending date of simulation [Year, Month, Day, Hour, Minute]
 [flag]

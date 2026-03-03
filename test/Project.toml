@@ -1,0 +1,5 @@
+[deps]
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+PenmanMonteithHourly = "818149cd-5caa-400d-8d3a-cc13d265cce7"
+Pipe = "b98c9c47-44ae-5843-9183-064241ee97a0"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
