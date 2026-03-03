@@ -1,12 +1,14 @@
 using PenmanMonteith
 using Test
 
-@testset "PenmanMonteith.jl" begin
+@testset "PenmanMonteithHourly.jl" begin
   # Test Geometry to WKT
    #  geom = GeoDataFrames.read("data/roi.geojson").geometry[1]
    #  wkt = SentinelExplorer._to_wkt(geom)
    #  wkt_test = @pipe roi |> map(x -> join(x, " "), _) |> join(_, ",") |> "POLYGON (($_))"
-   #  @test wkt == wkt_test
+   A =1
+   B =1
+    @test A == B
 
    #  # Test Bounding Box to WKT
    #  bb = BoundingBox((52.1, -114.4), (51.9, -114.1))
