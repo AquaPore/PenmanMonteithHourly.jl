@@ -27,7 +27,7 @@ include("Read.jl")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #		FUNCTION : PENMAN_MONTEITH_HOURLY_RUN
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-function PENMAN_MONTEITH_HOURLY_RUN(; Path_Toml, α = -9999, Zaltitude = -99999, Date_Start = [], Date_End = [])
+function PENMAN_MONTEITH_HOURLY_RUN(; Path_Toml, α = -9999, Zaltitude = -99999, Date_Start = [], Date_End = [], 🎏_Debug=false)
 	printstyled("======= Start Running PET ========== \n", color = :red)
 	println(" ")
 
@@ -62,7 +62,11 @@ function PENMAN_MONTEITH_HOURLY_RUN(; Path_Toml, α = -9999, Zaltitude = -99999,
 	Pet_Sim = zeros(Float64, Nmeteo)
 
    # Computing for evey time step PET
-   Threads.@threads for iT ∈ 1:Nmeteo
+   # Threads.@threads
+	Threads.@threads for iT ∈ 1:Nmeteo
+		if 🎏_Debug
+			println("Id = ", iT)
+		end
       Pet_Sim[iT] = PenmanMonteithHourly.PENMAN_MONTEITH(; cst=option.cst, DayHour, flag=option.flag, iT, meteo, param=option.param, ΔT₁=ΔT[iT])
    end # for iT =1:Nmeteo
 
@@ -154,11 +158,11 @@ end  # function: PENMAN_MONTEITH
 #------------------------------------------------------------------
 end # module PenmanMonteithHourly
 
-# # include("src/PenmanMonteithHourly.jl")
-# # Castldockerell
-# Path_Toml = raw"D:\JOE\MAIN\MODELS\PenmanMonteithHourly.jl\DATA\INPUT\Castledockerell\Castledockerell_PetOption.toml"
+# include("src/PenmanMonteithHourly.jl")
+# Castldockerell
+Path_Toml = raw"D:\JOE\MAIN\MODELS\PenmanMonteithHourly.jl\DATA\INPUT\Dunleer\Dunleer_PetOption.toml"
 
-# # # Ballycanew
-# # Path_Toml = raw"D:\JOE\MAIN\MODELS\PenmanMonteithHourly.jl\DATA\INPUT\Ballycanew\Ballycanew_PetOption.toml"
+# # Ballycanew
+# Path_Toml = raw"D:\JOE\MAIN\MODELS\PenmanMonteithHourly.jl\DATA\INPUT\Ballycanew\Ballycanew_PetOption.toml"
 
-# DayHour, DayHour_Reduced, Pet_Obs, Pet_Obs_Reduced, Pet_Sim, Pet_Sim_Reduced = PenmanMonteithHourly.PENMAN_MONTEITH_HOURLY_RUN(; Path_Toml, α = 0.23);
+DayHour, DayHour_Reduced, Pet_Obs, Pet_Obs_Reduced, Pet_Sim, Pet_Sim_Reduced = PenmanMonteithHourly.PENMAN_MONTEITH_HOURLY_RUN(; Path_Toml, α = 0.23, 🎏_Debug=false);
